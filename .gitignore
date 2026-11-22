@@ -12,7 +12,9 @@ build/
 
 # Generated data, dumps, cleaned corpora and benchmark outputs
 data/
-results/
+results/*
+!results/summary.csv
+!results/*.png
 *.bz2
 *.xz
 *.zst
