@@ -10,7 +10,7 @@ OpenMP, compared against a sequential baseline.
 - [x] Sequential baseline (`wc_seq`)
 - [x] OpenMP parallel implementation (`wc_par`)
 - [x] Verification harness and fixtures (486 checks pass)
-- [ ] Dataset preprocessing / sizing scripts
+- [x] Dataset preprocessing / sizing scripts
 - [ ] Benchmark runner and plots
 
 ## Build
@@ -35,6 +35,22 @@ wc_seq <file> [--top N] [--out FILE] [--stats FILE] [--buffer-bytes N]
 `--out` writes the **full** sorted `(word, count)` table as TSV; `--top`
 controls how many rows are printed to stdout. `--stats` writes a JSON summary
 with timings, token counts and peak RSS.
+
+## Dataset pipeline
+
+The proposal PDF is deliberately not tracked. The dump is downloaded into
+`data/raw/` (ignored by git):
+
+```
+curl -L -o data/raw/simplewiki-latest-pages-articles.xml.bz2 \
+  https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2
+py tools/preprocess.py                 # -> data/clean/canonical.txt
+py tools/make_sizes.py                 # -> data/datasets/{500MB,1GB,2GB,5GB}.txt
+```
+
+The four benchmark files repeat the canonical text at line boundaries; their
+actual byte sizes and hashes are recorded in `data/datasets/manifest.json`.
+Preprocessing time is measured separately and excluded from speedup.
 
 ## Normalization contract
 
