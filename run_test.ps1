@@ -19,27 +19,27 @@ if (-not (Test-Path -LiteralPath $inputPath -PathType Leaf)) {
     throw "Input file not found: $inputPath`nPut test.txt in the project folder or pass a file path."
 }
 
-$compiler = Get-Command g++ -ErrorAction SilentlyContinue
+$compiler = Get-Command gcc -ErrorAction SilentlyContinue
 if (-not $compiler) {
-    throw "g++ was not found. Install/configure MSYS2 UCRT64 and add C:\msys64\ucrt64\bin to PATH."
+    throw "gcc was not found. Install/configure MSYS2 UCRT64 and add C:\msys64\ucrt64\bin to PATH."
 }
 
 $buildDir = Join-Path $projectRoot "build"
 $resultsDir = Join-Path $projectRoot "results"
 New-Item -ItemType Directory -Force -Path $buildDir, $resultsDir | Out-Null
 
-$commonFlags = @("-O2", "-std=c++17", "-fopenmp", "-Wall", "-Wextra", ("-I" + (Join-Path $projectRoot "include")))
+$commonFlags = @("-O2", "-std=c11", "-fopenmp", "-Wall", "-Wextra", ("-I" + (Join-Path $projectRoot "include")))
 $targets = @(
-    @{ Name = "wc_seq"; Source = "src/seq_main.cpp" },
-    @{ Name = "wc_par"; Source = "src/par_main.cpp" },
-    @{ Name = "wc_verify"; Source = "src/verify_main.cpp" }
+    @{ Name = "wc_seq"; Sources = @("src/seq_main.c", "src/wc.c") },
+    @{ Name = "wc_par"; Sources = @("src/par_main.c", "src/wc.c") },
+    @{ Name = "wc_verify"; Sources = @("src/verify_main.c") }
 )
 
 foreach ($target in $targets) {
     $binaryPath = Join-Path $buildDir ($target.Name + ".exe")
     Write-Host "Building $($target.Name).exe..."
-    $sourcePath = Join-Path $projectRoot $target.Source
-    & $compiler.Source @commonFlags $sourcePath "-o" $binaryPath "-lpsapi"
+    $sourcePaths = @($target.Sources | ForEach-Object { Join-Path $projectRoot $_ })
+    & $compiler.Source @commonFlags @sourcePaths "-o" $binaryPath "-lpsapi"
     if ($LASTEXITCODE -ne 0) {
         throw "Build failed for $($target.Name) (exit code $LASTEXITCODE)."
     }

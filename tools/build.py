@@ -1,4 +1,4 @@
-"""Build the three C++ binaries without requiring GNU make."""
+"""Build the three C/OpenMP binaries without requiring GNU make."""
 
 from __future__ import annotations
 
@@ -12,9 +12,9 @@ BUILD = ROOT / "build"
 EXT = ".exe" if sys.platform == "win32" else ""
 
 SOURCES = {
-    "wc_seq": "src/seq_main.cpp",
-    "wc_par": "src/par_main.cpp",
-    "wc_verify": "src/verify_main.cpp",
+    "wc_seq": ("src/seq_main.c", "src/wc.c"),
+    "wc_par": ("src/par_main.c", "src/wc.c"),
+    "wc_verify": ("src/verify_main.c",),
 }
 
 
@@ -24,19 +24,20 @@ def main() -> int:
     args = parser.parse_args()
     BUILD.mkdir(parents=True, exist_ok=True)
 
-    flags = ["g++", "-O2", "-std=c++17", "-fopenmp", "-Wall", "-Wextra", "-Iinclude"]
+    flags = ["gcc", "-O2", "-std=c11", "-fopenmp", "-Wall", "-Wextra", "-Iinclude"]
     libs = ["-lpsapi"] if sys.platform == "win32" else []
-    headers = list((ROOT / "include").glob("*.hpp"))
+    headers = list((ROOT / "include").glob("*.h"))
 
-    for name, source in SOURCES.items():
+    for name, sources in SOURCES.items():
         binary = BUILD / f"{name}{EXT}"
-        source_path = ROOT / source
+        source_paths = [ROOT / source for source in sources]
         if not args.force and binary.exists():
-            newest_header = max((p.stat().st_mtime for p in headers), default=0)
-            if binary.stat().st_mtime >= max(source_path.stat().st_mtime, newest_header):
+            newest_input = max((p.stat().st_mtime for p in source_paths + headers), default=0)
+            if binary.stat().st_mtime >= newest_input:
                 continue
         print(f"building {binary.name}")
-        subprocess.run(flags + [source, "-o", str(binary)] + libs, cwd=ROOT, check=True)
+        subprocess.run(flags + [str(source.relative_to(ROOT)) for source in source_paths] +
+                       ["-o", str(binary)] + libs, cwd=ROOT, check=True)
     print("build complete")
     return 0
 

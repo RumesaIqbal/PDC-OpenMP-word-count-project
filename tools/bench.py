@@ -135,6 +135,31 @@ def make_plots(summary: list[dict], outdir: Path) -> None:
     primary = [r for r in summary if r["impl"] == "parallel" and
                r["schedule"] == "static" and r["merge"] == "critical"]
 
+    fig, axes = plt.subplots(2, 2, figsize=(11, 8), squeeze=False)
+    for index, label in enumerate(labels):
+        ax = axes[index // 2][index % 2]
+        seq = next((r for r in summary if r["label"] == label and
+                    r["impl"] == "sequential"), None)
+        points = sorted([r for r in primary if r["label"] == label],
+                        key=lambda r: r["threads"])
+        if seq and points:
+            threads = [r["threads"] for r in points]
+            times = [r["t_total"] for r in points]
+            ax.plot(threads, times, marker="o", label="parallel")
+            ax.axhline(seq["t_total"], ls="--", color="gray",
+                       label="sequential (1 thread)")
+            ax.set(title=label, xlabel="threads", ylabel="execution time (s)",
+                   xticks=threads)
+            ax.legend()
+        else:
+            ax.set_visible(False)
+    for index in range(len(labels), 4):
+        axes[index // 2][index % 2].set_visible(False)
+    fig.suptitle("Execution time: sequential vs parallel (static/critical)")
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    fig.savefig(outdir / "execution_time.png", dpi=140)
+    plt.close(fig)
+
     fig, ax = plt.subplots(figsize=(7, 5))
     for label in labels:
         points = sorted([r for r in primary if r["label"] == label],
@@ -184,10 +209,10 @@ def make_plots(summary: list[dict], outdir: Path) -> None:
                          r["merge"] == "critical"], key=lambda r: r["threads"])
         if points:
             ax.plot([r["threads"] for r in points],
-                    [(r["t_merge_wait"] + r["t_merge_hold"]) / r["t_total"] * 100
-                     for r in points], marker="o", label=label)
-    ax.set(xlabel="threads", ylabel="merge time (%)",
-           title="Synchronization overhead (critical merge)")
+                    [r["t_merge_wait"] + r["t_merge_hold"] for r in points],
+                    marker="o", label=label)
+    ax.set(xlabel="threads", ylabel="aggregate merge thread-time (s)",
+           title="Aggregate critical-merge wait and hold time")
     ax.legend()
     fig.tight_layout()
     fig.savefig(outdir / "merge_overhead.png", dpi=140)

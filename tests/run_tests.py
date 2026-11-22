@@ -30,17 +30,17 @@ BUFFERS = (4 * 1024 * 1024, 8)
 
 def build() -> None:
     BUILD.mkdir(exist_ok=True)
-    common = ["g++", "-O2", "-std=c++17", "-fopenmp", "-Wall", "-Wextra", "-Iinclude"]
+    common = ["gcc", "-O2", "-std=c11", "-fopenmp", "-Wall", "-Wextra", "-Iinclude"]
     libs = ["-lpsapi"] if sys.platform == "win32" else []
     sources = {
-        SEQ: "src/seq_main.cpp",
-        PAR: "src/par_main.cpp",
-        VERIFY: "src/verify_main.cpp",
+        SEQ: ("src/seq_main.c", "src/wc.c"),
+        PAR: ("src/par_main.c", "src/wc.c"),
+        VERIFY: ("src/verify_main.c",),
     }
-    for binary, source in sources.items():
-        if not binary.exists():
-            subprocess.run(common + [source, "-o", str(binary)] + libs,
-                           cwd=ROOT, check=True)
+    for binary, source_files in sources.items():
+        inputs = [str(source) for source in source_files]
+        subprocess.run(common + inputs + ["-o", str(binary)] + libs,
+                       cwd=ROOT, check=True)
 
 
 def run(command: list[str]) -> subprocess.CompletedProcess[str]:

@@ -31,12 +31,16 @@ SHA-256 hashes are recorded in `data/datasets/manifest.json`.
 
 ## 3. Implementation
 
+The counting programs and verifier are written in C11 and compiled with GCC
+and OpenMP. Python remains in use for preprocessing, benchmark orchestration,
+and the fixture harness.
+
 ### Sequential baseline
 
-`wc_seq` reads the file in 4 MiB buffers, tokenizes with the shared
-`include/tokenizer.hpp`, and counts into one `unordered_map`. A partial token
-at a buffer edge is carried into the next buffer. It produces the reference
-count table and reference timing.
+`wc_seq` is implemented in C11. It reads the file in 4 MiB buffers, uses the
+shared tokenizer in `src/wc.c`, and counts into an open-addressed hash table.
+A partial token at a buffer edge is carried into the next buffer. It produces
+the reference count table and reference timing.
 
 ### Normalization
 
@@ -47,15 +51,15 @@ are directly comparable.
 
 ### Chunking
 
-`compute_boundaries()` divides the file into byte ranges and moves each
+`wc_compute_boundaries()` divides the file into byte ranges and moves each
 interior boundary forward to the next delimiter byte. A chunk therefore
 starts at a delimiter and ends immediately before one, so no word is split or
 counted twice. Each thread opens its own file stream and seeks to its chunk.
 
 ### Parallel counting and merging
 
-`wc_par` creates one private `unordered_map` per thread inside the OpenMP
-parallel region and counts with no locks. Two schedules are supported:
+`wc_par` creates one private C hash table per thread inside the OpenMP parallel
+region and counts with no locks. Two schedules are supported:
 `static` with one chunk per thread, and `dynamic` with eight chunks per
 thread. Merging is implemented in two ways:
 
@@ -74,8 +78,10 @@ written as TSV; `--top N` only controls console output.
 mixed case/punctuation, UTF-8, a token crossing a tiny read buffer, and long
 tokens that force boundary snapping) against hand-computed expected tables,
 then runs 80 parallel configurations per fixture and compares each output
-byte-for-byte with the sequential output. 492 checks pass. `wc_verify` also
-reports a digest and the first differing rows.
+byte-for-byte with the sequential output. The harness contains 492 checks.
+`wc_verify` also reports a digest and the first differing rows. In the C
+benchmark below, all 60 measured parallel outputs matched their sequential
+references.
 
 ## 5. Performance methodology
 
@@ -98,10 +104,10 @@ reference output byte-for-byte (`match=1`); the summary reports
 
 | Dataset | T_seq (s) | T_par@8 (s) | Speedup@8 | Efficiency@8 | Peak RSS@8 (MB) |
 |---|---:|---:|---:|---:|---:|
-| 500 MB | 6.777 | 2.910 | 2.329 | 0.291 | 318 |
-| 1 GB | 13.071 | 5.444 | 2.401 | 0.300 | 429 |
-| 2 GB | 25.878 | 10.047 | 2.576 | 0.322 | 608 |
-| 5 GB | 64.580 | 19.136 | 3.375 | 0.422 | 894 |
+| 500 MB | 12.494 | 3.003 | 4.161 | 0.520 | 198 |
+| 1 GB | 28.595 | 8.872 | 3.223 | 0.403 | 338 |
+| 2 GB | 55.010 | 18.257 | 3.013 | 0.377 | 468 |
+| 5 GB | 143.273 | 47.981 | 2.986 | 0.373 | 600 |
 
 Peak RSS is converted from the summary's KiB values using 1,024 KiB per MiB
 and rounded to the nearest MB for the table. The summary reports aggregate
@@ -110,17 +116,17 @@ wall-clock time and are not interpreted as a percentage of total time.
 
 ## 7. Discussion
 
-The eight-thread speedup rises from 2.329 on 500 MB to 3.375 on 5 GB, while
-efficiency rises from 0.291 to 0.422. The largest input benefits more from
-parallel counting, but the eight-thread run also uses more memory: peak RSS
-increases from about 318 MB to 894 MB. At 16 threads, speedup is lower than at
-eight threads for every input (about 1.98–2.93 versus 2.33–3.37), with
-efficiency between 0.124 and 0.183; this is consistent with diminishing
-returns beyond the machine's eight logical cores. The aggregate merge wait
-and hold measurements are reported in `results/summary.csv`; because they
-sum time across threads, they should not be read as a share of wall-clock
-time. These results describe only static/critical; this run does not support
-a comparison with dynamic scheduling or tree merging.
+Eight threads speed the C implementation up by about 2.99–4.16× across the
+four inputs. The 5 GB sequential run takes 143.273 seconds, compared with
+47.981 seconds at eight threads. Peak RSS at eight threads ranges from about
+198 MB to 600 MB. At 16 threads, speedup varies from 2.55× to 3.69× and
+efficiency ranges from 0.159 to 0.231; the change versus eight threads depends
+on input size, so additional threads do not produce a consistent improvement.
+The aggregate merge wait and hold measurements are reported in
+`results/summary.csv`; because they sum time across threads, they should not be
+read as a share of wall-clock time. These results describe only
+static/critical; this run does not support a comparison with dynamic
+scheduling or tree merging.
 
 ## 8. Division of work
 

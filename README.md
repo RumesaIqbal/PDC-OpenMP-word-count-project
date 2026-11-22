@@ -8,13 +8,13 @@ Layqa Fatima (23K-0572).
 
 ## Build
 
-Requires a C++17 compiler with OpenMP (tested with MSYS2 UCRT64 GCC 16.2).
+Requires a C11 compiler with OpenMP (tested with MSYS2 UCRT64 GCC).
 On Windows, `C:\msys64\ucrt64\bin` must be on `PATH`.
 
 ```sh
 py tools/build.py            # builds build/wc_seq, wc_par, wc_verify
 py tools/build.py --force    # rebuild everything
-py tests/run_tests.py        # 486 correctness checks
+py tests/run_tests.py        # 492 correctness checks
 ```
 
 `make all` / `make test` do the same if GNU make is installed.
@@ -40,7 +40,7 @@ and peak RSS.
 
 - Byte offsets are moved forward to the next delimiter before counting, so no
   word is split between chunks.
-- Each OpenMP thread owns a private `unordered_map` and streams its chunk(s)
+- Each OpenMP thread owns a private open-addressed C hash table and streams its chunk(s)
   through a bounded read buffer (default 4 MiB); no lock during counting.
 - Merging is available in two modes: `#pragma omp critical` (baseline) and a
   pairwise tree reduction over the local maps. The critical mode records
@@ -66,7 +66,7 @@ excluded from those times. To choose another input file or parallel settings:
 powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\path\to\file.txt -Threads 8 -Schedule static -Merge critical
 ```
 
-This requires `g++` with OpenMP on `PATH` (for example, MSYS2 UCRT64).
+This requires `gcc` with OpenMP on `PATH` (for example, MSYS2 UCRT64).
 The small `test.txt` is useful for checking correctness, but its tiny size
 makes OpenMP overhead larger than the work. To see a meaningful timing
 comparison, run the same pipeline on the generated 500 MB dataset:
@@ -75,10 +75,10 @@ comparison, run the same pipeline on the generated 500 MB dataset:
 powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\data\datasets\500MB.txt -Threads 8 -Schedule static -Merge critical
 ```
 
-The benchmark's three-run median for this dataset was about 6.78 seconds
-sequential and 2.91 seconds parallel; a single live run can vary with caching
-and system load. For a longer demonstration with a larger gap, use
-`5GB.txt` in place of `500MB.txt`.
+The C benchmark's three-run median for this dataset was about 12.49 seconds
+sequential and 3.00 seconds parallel. A single live run can vary with caching
+and system load. For a longer demonstration, use `5GB.txt` in place of
+`500MB.txt`.
 
 ## Dataset pipeline
 
@@ -108,7 +108,11 @@ the sequential output, and writes:
 
 - `results/raw_runs.csv` — every measured run,
 - `results/summary.csv` — medians, speedup, efficiency, memory,
-- `results/{speedup,efficiency,memory,merge_overhead}.png`.
+- `results/{execution_time,speedup,efficiency,memory,merge_overhead}.png`.
+
+`execution_time.png` compares the sequential baseline with parallel execution
+times at each thread count. The speedup and efficiency plots show scaling over
+the same thread counts.
 
 Speedup is `T_seq / T_par` using the median sequential time for the same
 file. Threads 1/2/4/8 are the hardware-scaling points on this 4-core/8-thread
@@ -117,5 +121,6 @@ laptop; 16 threads is an explicitly labelled oversubscription experiment.
 ## Normalization contract
 
 Words are ASCII `[A-Za-z0-9']`, lowercased. Every other byte (including all
-non-ASCII UTF-8 bytes) is a delimiter. Both implementations use the same
-`include/tokenizer.hpp`, so their outputs are directly comparable.
+non-ASCII UTF-8 bytes) is a delimiter. The sequential and parallel C programs
+share the tokenizer and counting routines in `src/wc.c`, so their outputs are
+directly comparable.
