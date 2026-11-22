@@ -59,6 +59,24 @@ and peak RSS.
 - Defaults: 1 chunk per thread for `static`, 8 chunks per thread for
   `dynamic`; `--num-chunks` overrides both.
 
+### Run the complete test-file demo (Windows)
+
+Place `test.txt` in the project folder, then run this from PowerShell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_test.ps1
+```
+
+The script builds all three executables, runs sequential and parallel word
+counts, and verifies that their full output tables match. Results and stats are
+written to `results\`. To choose another input file or parallel settings:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\path\to\file.txt -Threads 8 -Schedule static -Merge critical
+```
+
+This requires `g++` with OpenMP on `PATH` (for example, MSYS2 UCRT64).
+
 ## Dataset pipeline
 
 The downloaded dump lives in `data/raw/` (ignored by git):
