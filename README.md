@@ -78,6 +78,18 @@ powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\path\to\fil
 ```
 
 This requires `g++` with OpenMP on `PATH` (for example, MSYS2 UCRT64).
+The small `test.txt` is useful for checking correctness, but its tiny size
+makes OpenMP overhead larger than the work. To see a meaningful timing
+comparison, run the same pipeline on the generated 500 MB dataset:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\data\datasets\500MB.txt -Threads 8 -Schedule static -Merge critical
+```
+
+The benchmark's three-run median for this dataset was about 6.78 seconds
+sequential and 2.91 seconds parallel; a single live run can vary with caching
+and system load. For a longer demonstration with a larger gap, use
+`5GB.txt` in place of `500MB.txt`.
 
 ## Dataset pipeline
 
