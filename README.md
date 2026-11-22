@@ -12,7 +12,7 @@ Layqa Fatima (23K-0572).
 - [x] Shared C++ core: tokenizer, chunked reader, timing/memory helpers
 - [x] Sequential baseline (`wc_seq`)
 - [x] OpenMP parallel implementation (`wc_par`)
-- [x] Verification harness and fixtures (486 checks pass)
+- [x] Verification harness and fixtures (492 checks pass)
 - [x] Dataset preprocessing / sizing scripts
 - [x] Benchmark runner and plots
 - [ ] Full benchmark run and report write-up

@@ -66,6 +66,10 @@ def main() -> int:
                 continue
             if seq_out.read_bytes() != expected.read_bytes():
                 failures.append(f"{fixture.name}: sequential output != {expected.name}")
+            verified = run([str(VERIFY), str(seq_out), str(expected)])
+            total += 1
+            if verified.returncode != 0 or "MATCH" not in verified.stdout:
+                failures.append(f"{fixture.name}: wc_verify did not report MATCH")
 
             configs = itertools.product(THREADS, SCHEDULES, MERGES, CHUNKS, BUFFERS)
             for threads, schedule, merge, chunks, buffer_bytes in configs:
