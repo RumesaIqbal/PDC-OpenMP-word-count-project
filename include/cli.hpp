@@ -65,6 +65,11 @@ inline bool parse_common(int argc, char** argv, CommonOptions& o,
             }
         } else if (!arg.empty() && arg[0] == '-') {
             extra.push_back(arg);
+            // All parallel-only flags take a value; keep it with its flag so
+            // parse_parallel sees the same (flag, value) pairs.
+            if (i + 1 < argc) {
+                extra.push_back(argv[++i]);
+            }
         } else if (!have_input) {
             o.input = arg;
             have_input = true;
