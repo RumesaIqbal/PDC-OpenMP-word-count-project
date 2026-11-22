@@ -6,17 +6,6 @@ compared against a sequential baseline on the same cleaned input.
 Group members: Rumesa Iqbal (23K-0734), Daniya Javaid (23K-0552),
 Layqa Fatima (23K-0572).
 
-## Status
-
-- [x] Repository initialized (the proposal PDF is intentionally **not** tracked)
-- [x] Shared C++ core: tokenizer, chunked reader, timing/memory helpers
-- [x] Sequential baseline (`wc_seq`)
-- [x] OpenMP parallel implementation (`wc_par`)
-- [x] Verification harness and fixtures (492 checks pass)
-- [x] Dataset preprocessing / sizing scripts
-- [x] Benchmark runner and plots
-- [ ] Full benchmark run and report write-up
-
 ## Build
 
 Requires a C++17 compiler with OpenMP (tested with MSYS2 UCRT64 GCC 16.2).
