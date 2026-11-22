@@ -63,4 +63,23 @@ Write-Host "Verifying complete count tables..."
 & (Join-Path $buildDir "wc_verify.exe") $seqOutput $parOutput
 if ($LASTEXITCODE -ne 0) { throw "Verification failed (exit code $LASTEXITCODE)." }
 
+$seqSummary = Get-Content -LiteralPath $seqStats -Raw | ConvertFrom-Json
+$parSummary = Get-Content -LiteralPath $parStats -Raw | ConvertFrom-Json
+$seqSeconds = [double]$seqSummary.t_total
+$parSeconds = [double]$parSummary.t_total
+
+Write-Host ""
+Write-Host "Timing comparison (counting time; excludes compilation and output-file writing):"
+Write-Host ("Sequential: {0:F6} s ({1:F3} ms)" -f $seqSeconds, ($seqSeconds * 1000))
+Write-Host ("Parallel:   {0:F6} s ({1:F3} ms)" -f $parSeconds, ($parSeconds * 1000))
+if ($seqSeconds -gt 0 -and $parSeconds -gt 0) {
+    if ($parSeconds -lt $seqSeconds) {
+        Write-Host ("Parallel speedup: {0:F2}x" -f ($seqSeconds / $parSeconds))
+    } elseif ($parSeconds -gt $seqSeconds) {
+        Write-Host ("Parallel slowdown: {0:F2}x" -f ($parSeconds / $seqSeconds))
+    } else {
+        Write-Host "Sequential and parallel times are equal."
+    }
+}
+
 Write-Host "Done. Full tables and stats are in $resultsDir"

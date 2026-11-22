@@ -69,7 +69,9 @@ powershell -ExecutionPolicy Bypass -File .\run_test.ps1
 
 The script builds all three executables, runs sequential and parallel word
 counts, and verifies that their full output tables match. Results and stats are
-written to `results\`. To choose another input file or parallel settings:
+written to `results\`. It also prints each run's measured counting time and
+the parallel speedup or slowdown; compilation and output-file writing are
+excluded from those times. To choose another input file or parallel settings:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\run_test.ps1 -InputFile .\path\to\file.txt -Threads 8 -Schedule static -Merge critical
