@@ -21,7 +21,7 @@ wiki markup, and writes one cleaned article per line to a canonical corpus.
 Preprocessing is timed separately and is excluded from all speedup figures.
 
 The run processed 563,515 pages, wrote 286,107 articles and skipped 277,408
-non-article/redirect/empty pages in 477 seconds, producing a 518,124,586-byte
+non-article/redirect/empty pages in 92.193 seconds, producing a 518,124,586-byte
 canonical corpus (SHA-256 `2343375d…d5fe2d9`).
 
 `tools/make_sizes.py` repeats the canonical corpus at line boundaries to build
@@ -79,8 +79,8 @@ reports a digest and the first differing rows.
 
 ## 5. Performance methodology
 
-For each dataset the sequential run is repeated `1 + 5` times (one warm-up,
-five measured); each parallel configuration is repeated the same way. The
+For each dataset the sequential run is repeated `1 + 3` times (one warm-up,
+three measured); each parallel configuration is repeated the same way. The
 machine has 4 physical / 8 logical cores (i7-1185G7), 32 GB RAM and an SSD.
 `OMP_PROC_BIND=TRUE` and `OMP_PLACES=cores` are set. Reported metrics are
 median wall time, speedup `T_seq / T_par`, efficiency `speedup / threads`,
@@ -89,28 +89,38 @@ merge, top-N). 16 threads is a labelled oversubscription experiment.
 
 ## 6. Results
 
-_To be filled from `results/summary.csv` after the full benchmark run._
+The final benchmark slice measured only `static` scheduling with the `critical`
+merge, using 1, 2, 4, 8 and 16 threads. Dynamic scheduling and tree merging
+were not re-run in this final slice. Each summary value below is the median of
+three measured runs. All 60 parallel measurements matched their sequential
+reference output byte-for-byte (`match=1`); the summary reports
+`matches_all=True` for all configurations.
 
 | Dataset | T_seq (s) | T_par@8 (s) | Speedup@8 | Efficiency@8 | Peak RSS@8 (MB) |
 |---|---:|---:|---:|---:|---:|
-| 500 MB | — | — | — | — | — |
-| 1 GB | — | — | — | — | — |
-| 2 GB | — | — | — | — | — |
-| 5 GB | — | — | — | — | — |
+| 500 MB | 6.777 | 2.910 | 2.329 | 0.291 | 318 |
+| 1 GB | 13.071 | 5.444 | 2.401 | 0.300 | 429 |
+| 2 GB | 25.878 | 10.047 | 2.576 | 0.322 | 608 |
+| 5 GB | 64.580 | 19.136 | 3.375 | 0.422 | 894 |
 
-_To be filled: static vs dynamic, critical vs tree, merge overhead percentage._
+Peak RSS is converted from the summary's KiB values using 1,024 KiB per MiB
+and rounded to the nearest MB for the table. The summary reports aggregate
+merge wait and hold measurements across threads; these values can exceed
+wall-clock time and are not interpreted as a percentage of total time.
 
 ## 7. Discussion
 
-Expected observations to verify with the measurements:
-
-- Counting is CPU-bound only while data is in cache; reading a multi-gigabyte
-  file can limit speedup, which is why read time is reported separately.
-- Thread-local maps avoid contention during counting; the critical-section
-  merge is serial, while tree reduction shortens the merge at high thread
-  counts at the cost of extra memory movement.
-- 16 threads on 8 logical cores is expected to show flat or falling
-  efficiency.
+The eight-thread speedup rises from 2.329 on 500 MB to 3.375 on 5 GB, while
+efficiency rises from 0.291 to 0.422. The largest input benefits more from
+parallel counting, but the eight-thread run also uses more memory: peak RSS
+increases from about 318 MB to 894 MB. At 16 threads, speedup is lower than at
+eight threads for every input (about 1.98–2.93 versus 2.33–3.37), with
+efficiency between 0.124 and 0.183; this is consistent with diminishing
+returns beyond the machine's eight logical cores. The aggregate merge wait
+and hold measurements are reported in `results/summary.csv`; because they
+sum time across threads, they should not be read as a share of wall-clock
+time. These results describe only static/critical; this run does not support
+a comparison with dynamic scheduling or tree merging.
 
 ## 8. Division of work
 
