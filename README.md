@@ -8,8 +8,8 @@ OpenMP, compared against a sequential baseline.
 - [x] Repository initialized (proposal PDF is intentionally **not** tracked)
 - [x] Shared C++ core: tokenizer, chunked file reader, timing/memory helpers
 - [x] Sequential baseline (`wc_seq`)
-- [ ] OpenMP parallel implementation (`wc_par`)
-- [ ] Verification harness and fixtures
+- [x] OpenMP parallel implementation (`wc_par`)
+- [x] Verification harness and fixtures (486 checks pass)
 - [ ] Dataset preprocessing / sizing scripts
 - [ ] Benchmark runner and plots
 

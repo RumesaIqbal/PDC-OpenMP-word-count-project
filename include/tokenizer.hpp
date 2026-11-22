@@ -41,21 +41,20 @@ public:
             while (j < len && !is_delim(static_cast<unsigned char>(data[j]))) {
                 ++j;
             }
-            if (carry_.empty()) {
+            // A token that reaches the end of this buffer may continue in the
+            // next one, so it stays in carry_ until a delimiter or finish().
+            if (carry_.empty() && j < len) {
                 std::string token;
                 token.reserve(j - i);
-                for (std::size_t k = i; k < j; ++k) {
-                    token.push_back(static_cast<char>(to_lower(static_cast<unsigned char>(data[k]))));
-                }
+                append_normalized(token, data + i, j - i);
                 ++counter_[std::move(token)];
+                ++tokens_;
             } else {
-                for (std::size_t k = i; k < j; ++k) {
-                    carry_.push_back(static_cast<char>(to_lower(static_cast<unsigned char>(data[k]))));
+                append_normalized(carry_, data + i, j - i);
+                if (j < len) {
+                    flush();
                 }
-                ++counter_[std::move(carry_)];
-                carry_.clear();
             }
-            ++tokens_;
             i = j;
         }
     }
@@ -66,6 +65,13 @@ public:
     Count tokens() const noexcept { return tokens_; }
 
 private:
+    static void append_normalized(std::string& dst, const char* data, std::size_t len) {
+        dst.reserve(dst.size() + len);
+        for (std::size_t k = 0; k < len; ++k) {
+            dst.push_back(static_cast<char>(to_lower(static_cast<unsigned char>(data[k]))));
+        }
+    }
+
     void flush() {
         if (carry_.empty()) {
             return;
