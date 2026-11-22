@@ -13,21 +13,21 @@ and explain where the speedup is limited.
 
 ## 2. Dataset and preprocessing
 
-The source is the `simplewiki-latest-pages-articles.xml.bz2` Wikipedia dump
-(Nov 2026 snapshot, 360,149,050 bytes compressed). `tools/preprocess.py`
-streams the BZ2 file through `xml.etree.ElementTree.iterparse`, keeps
+The source is the English Wikipedia (`enwiki`) "pages-articles" dump, Nov 2026
+snapshot. Three of the 73 available parts are used (the full 24.4 GB dump does
+not fit on this machine): `pages-articles9`, `pages-articles10` and
+`pages-articles11`, about 1.7 GB compressed in total. `tools/preprocess.py`
+streams the BZ2 files through `xml.etree.ElementTree.iterparse`, keeps
 namespace-0 non-redirect articles, strips comments, refs, HTML tags and simple
 wiki markup, and writes one cleaned article per line to a canonical corpus.
 Preprocessing is timed separately and is excluded from all speedup figures.
 
-The run processed 563,515 pages, wrote 286,107 articles and skipped 277,408
-non-article/redirect/empty pages in 477 seconds, producing a 518,124,586-byte
-canonical corpus (SHA-256 `2343375d…d5fe2d9`).
+Exact page/article counts, elapsed time and the corpus hash are recorded in
+`data/clean/preprocess_stats.json`.
 
 `tools/make_sizes.py` repeats the canonical corpus at line boundaries to build
-the four test files. Their actual byte sizes are 524,287,917 (500 MB),
-1,073,739,121 (1 GB), 2,147,483,561 (2 GB) and 5,368,707,908 (5 GB); exact
-SHA-256 hashes are recorded in `data/datasets/manifest.json`.
+the four test files. Their actual byte sizes and SHA-256 hashes are recorded
+in `data/datasets/manifest.json` and are used in all speedup calculations.
 
 ## 3. Implementation
 

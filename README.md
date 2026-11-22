@@ -61,14 +61,18 @@ and peak RSS.
 
 ## Dataset pipeline
 
-The downloaded dump lives in `data/raw/` (ignored by git):
+Three `enwiki` pages-articles parts are downloaded into `data/raw/enwiki_parts/`
+(ignored by git); the full 73-part dump would not fit on this disk:
 
 ```
-curl -L -o data/raw/simplewiki-latest-pages-articles.xml.bz2 \
-  https://dumps.wikimedia.org/simplewiki/latest/simplewiki-latest-pages-articles.xml.bz2
-py tools/preprocess.py                 # -> data/clean/canonical.txt
+curl -L -o data/raw/enwiki_parts/<part>.bz2 \
+  https://dumps.wikimedia.org/enwiki/latest/<part>.bz2
+py tools/preprocess.py                 # combines all parts -> data/clean/canonical.txt
 py tools/make_sizes.py                 # -> data/datasets/{500MB,1GB,2GB,5GB}.txt
 ```
+
+`preprocess.py --dump <part> --append` can add further parts to an existing
+corpus if more text is needed.
 
 The four benchmark files repeat the canonical text at line boundaries; their
 actual byte sizes and hashes are recorded in `data/datasets/manifest.json`.
